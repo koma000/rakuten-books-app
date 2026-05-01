@@ -31,5 +31,5 @@ class RakutenBookData(BaseModel):
         nums = re.findall(r'\d+', v)
 
         if len(nums) >= 3:
-            return f"{nums[0]}/{nums[1].zfill(2)}{nums[2].zfill(2)}"
+            return f"{nums[0]}/{nums[1].zfill(2)}/{nums[2].zfill(2)}"
         return v

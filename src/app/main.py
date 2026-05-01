@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 
+from app.api.v1 import books
 from app.core.config import settings
 from app.core.db import init_db
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
+
+app.include_router(books.router, prefix="/books", tags=["books"])
 
 
 # アプリ起動時に実行されるイベント
