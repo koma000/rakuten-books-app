@@ -4,6 +4,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.db import get_db
 from app.models.book import Book
@@ -17,6 +18,15 @@ db_dependency = Annotated[AsyncSession, Depends(get_db)]
 
 @router.post("/fetch/{isbn}", response_model=RakutenBookData)
 async def fetch_and_save_book(isbn: str, db: db_dependency):
+    # DBチェック
+    query = select(Book).where(Book.isbn == isbn)
+    result = await db.execute(query)
+    db_book = result.scalar_one_or_none()
+
+    if db_book:
+        # すでにデータがある場合は、APIを叩かずにそのまま返します
+        return db_book
+
     service = RakutenBookService()
     try:
         book_data = await service.fetch_book_by_isbn(isbn)
