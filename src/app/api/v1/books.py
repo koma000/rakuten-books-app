@@ -2,13 +2,15 @@ from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.core.db import get_db
 from app.models.book import Book
 from app.schemas.book import RakutenBookData
+from app.schemas.book_request import IsbnImportRequest
+from app.services.book_service import BookService
 from app.services.rakuten import RakutenBookService
 
 router = APIRouter()
@@ -51,3 +53,19 @@ async def fetch_and_save_book(isbn: str, db: db_dependency):
         ) from e
 
     return book_data
+
+
+@router.post("/batch")
+async def batch_register_books(request: IsbnImportRequest, db: db_dependency):
+    """
+    ISBNリストを受け取り、未登録のもののみ楽天APIから取得してDBに保存します
+    """
+    service = BookService(db)
+    try:
+        result = await service.batch_import_by_isbns(request)
+        return { "status": "completed", "details": result }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Server Error: {str(e)}"
+        ) from e
