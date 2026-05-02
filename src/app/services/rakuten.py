@@ -13,15 +13,17 @@ class RakutenBookService:
         self.app_id = settings.RAKUTEN_APPLICATION_ID
         self.access_key = settings.RAKUTEN_ACCESS_KEY
 
-    async def fetch_book_by_isbn(self, isbn: str) -> RakutenBookData | None:
+    async def fetch_book_by_isbn(self, isbn: str) -> RakutenBookData:
         """
         指定されたISBNを使って楽天APIから書籍情報を取得します。
         """
         params = {
             "applicationId": self.app_id,
             "accessKey": self.access_key,
-            "isbn": isbn,
             "format": "json",
+            "formatVersion": 2,
+            "isbn": isbn,
+            "outOfStockFlag": 1,
         }
 
         async with httpx.AsyncClient() as client:
@@ -33,9 +35,16 @@ class RakutenBookService:
             data = response.json()
 
             if data.get("count", 0) == 0:
-                return None
+                return RakutenBookData(
+                    isbn=isbn,
+                    title=None,
+                    sales_date=None,
+                    cover_url=None,
+                    thumbnail_url=None,
+                    get_flg=False,
+                )
 
-            item = data["Items"][0]["Item"]
+            item = data["Items"][0]
             return RakutenBookData(
                 isbn=item["isbn"],
                 title=item["title"],
