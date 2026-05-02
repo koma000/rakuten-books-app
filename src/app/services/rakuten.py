@@ -27,7 +27,7 @@ class RakutenBookService:
         async with httpx.AsyncClient() as client:
             response = await client.get(self.base_url, params=params)
 
-            # APIエラー(400, 500系)が発生した場合は例外を投げます
+            # APIエラーが発生した場合は例外を投げます
             response.raise_for_status()
 
             data = response.json()
