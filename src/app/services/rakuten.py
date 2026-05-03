@@ -35,14 +35,7 @@ class RakutenBookService:
             data = response.json()
 
             if data.get("count", 0) == 0:
-                return RakutenBookData(
-                    isbn=isbn,
-                    title=None,
-                    sales_date=None,
-                    cover_url=None,
-                    thumbnail_url=None,
-                    get_flg=False,
-                )
+                return RakutenBookData(isbn=isbn)
 
             item = data["Items"][0]
             return RakutenBookData(
