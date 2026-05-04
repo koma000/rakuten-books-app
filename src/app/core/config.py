@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +15,13 @@ class Settings(BaseSettings):
     # .envファイルから読み込むことを想定しています
     RAKUTEN_APPLICATION_ID: str = ""
     RAKUTEN_ACCESS_KEY: str = ""
+
+    # 参照元データベース
+    SRC_DB_PATH: str = ""
+
+    # ログ設定
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    SCRIPT_LOG_FILE_PATH: str = "script.log"
 
     # .envファイルの読み込み設定
     model_config = SettingsConfigDict(

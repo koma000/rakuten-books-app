@@ -13,6 +13,7 @@
 - **Database**: SQLite
 - **API Client**: httpx (Asynchronous)
 - **Validation**: Pydantic v2
+- **CLI Utilities**: tqdm (Progress Bar)
 - **Environment**: Vim / Ruff (Linter & Formatter)
 
 ## ✨ こだわり・設計のポイント
@@ -26,9 +27,11 @@
 API検索の結果、書籍が見つからなかった場合でも、ISBNをキーとして `get_flg=False` 状態でレコードを作成します。
 これにより、「システム内に登録はあるが、詳細データが未取得である」という状態を管理でき、将来的な再取得や手動登録のトリガーとして活用可能です。
 
-### 3. 保守性の高いディレクトリ構成と拡張性
-- **バージョニング**: `/api/v1/` 階層を採用し、将来的な破壊的変更に対応。
-- **DRYな実装**: Pydanticの `model_dump()` とPythonの辞書展開（`**dict`）を組み合わせ、APIデータからDBモデルへの変換を柔軟かつ簡潔に記述。
+### 3. データ移行・メンテナンス用スクリプトの完備
+既存DBの不完全なデータ（出版者記号・書名記号のみ）を自動でISBN13へ変換し、自作APIを通じて一括登録するメンテナンススクリプトを同梱しています。
+- **堅牢な変換ロジック**: Pydanticを用いたバリデーションにより、不正な記号を含むデータを事前に排除。
+- **一括処理（バッチ）最適化**: `httpx` の非同期通信とバッチ送信（50件単位など）により、大量データも高速に同期。
+- **進捗の可視化**: `tqdm` によるプログレスバー表示を実装し、長時間かかる処理の視認性を確保。
 
 ## 📂 ディレクトリ構造
 ```text
@@ -39,6 +42,8 @@ src/
 │   ├── core/              # 設定・共通処理
 │   ├── models/            # SQLAlchemy DBモデル
 │   ├── schemas/           # Pydanticデータ定義
+│   ├── scripts/           # メンテナンス・データ移行用スクリプト（追加）
+│   │   └── import_books.py
 │   ├── services/          # 楽天API連携ロジック（Service層）   
 │   └── main.py            # エントリーポイント
 ```
@@ -50,17 +55,25 @@ git clone https://github.com/koma000/rakuten-books-app.git
 cd rakuten-books-app
 
 # 2. 依存関係のインストール (Poetryを使用)
-# 仮想環境の作成とライブラリのインストールを同時に行います
 poetry install
 
 # 3. 環境変数の設定
-# .env ファイルを作成し、楽天APIの各認証情報を設定してください
 cat << EOF > .env
 RAKUTEN_APPLICATION_ID=あなたのアプリケーションID
 RAKUTEN_ACCESS_KEY=あなたのアクセスキー
+SRC_DB_PATH=移行元DBのパス
 EOF
 
 # 4. サーバー起動
-# poetry run を通じて仮想環境内の uvicorn を実行します
 poetry run uvicorn src.app.main:app --reload
 ```
+
+## 🛠 スクリプトの実行
+既存DBから情報を抽出し、API経由で書籍データを登録・更新します。サーバー（uvicorn）を起動した状態で実行してください。
+
+```bash
+# ISBN変換およびAPI一括同期の実行
+poetry run python -m src.app.scripts.import_books
+```
+
+---

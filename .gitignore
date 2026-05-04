@@ -5,3 +5,4 @@ __pycache__/
 *.db
 python-version
 .ruff_cache/
+*.log
